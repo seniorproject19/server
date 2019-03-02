@@ -65,13 +65,14 @@ router.post('/register', function(req, res, next) {
   let username = req.body.username;
   let pwd = req.body.pwd;
   let email = req.body.email;
-  let birthday = req.body.birthday;
+  // let birthday = req.body.birthday;
+  let isOwner = req.body.isOwner;
   pool.getConnection(function(err, connection) {
     if (err) {
       console.log(err);
       responseJSON(res, undefined);
     } else {
-      connection.query(authSQL.insert, [username, pwd, email, null, birthday], function(err, result) {
+      connection.query(authSQL.insert, [username, pwd, email, null, null, isOwner], function(err, result) {
         if (err) {
           console.log(err);
         }

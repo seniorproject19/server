@@ -44,10 +44,12 @@ router.get('/user', function(req, res, next) {
           } else {
             let email = result[0].email;
             let uid = result[0].uid;
+            let is_owner = result[0].is_owner;
             retVal = {
               code: 200,
               uid: uid,
-              email: email
+              email: email,
+              is_owner: is_owner
             }
           }
           responseJSON(res, retVal);   
