@@ -1,4 +1,5 @@
 var express = require('express');
+var multer = require('multer');
 var router = express.Router();
 
 var mysql = require('mysql');
@@ -7,6 +8,17 @@ var dbConfig = require('../conf/db');
 var authSQL = require('../db/authSql');
 
 var pool = mysql.createPool(dbConfig.mysql);
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, '../public/uploads/images/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname)
+  }
+})
+
+var upload = multer({ storage: storage, limits: { fieldSize: 2 * 1024 * 1024 } });
 
 var responseJSON = function(res, ret) {
   if (typeof ret === 'undefined') {
@@ -205,5 +217,15 @@ router.post('/post/availability', function(req, res, next) {
   });
 });
 
+router.post('/upload/images', function(req, res) {
+  upload.single('file')(req, res, function(err) {
+      if (err) {
+          console.log("Error uploading file: " + err)
+          return
+      }
+      console.log(req.body) // form fields
+      console.log(req.file) // form file
+  })
+})
 
 module.exports = router;
