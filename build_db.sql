@@ -11,8 +11,9 @@ CREATE TABLE users(
 
 CREATE TABLE posts(
    pid BIGINT NOT NULL AUTO_INCREMENT,
+   post_id VARCHAR(32) NOT NULL,
    uid BIGINT NOT NULL,
-   date_posted DATE,
+   date_posted DATETIME,
    title VARCHAR(1024),
    description VARCHAR(8192),
    longitude DECIMAL,
@@ -27,7 +28,7 @@ CREATE TABLE posts(
 );
 
 CREATE TABLE availability(
-   weekday CHAR(3),
+   week_day CHAR(3),
    start_time INT NOT NULL,
    end_time INT NOT NULL,
    pid BIGINT NOT NULL,

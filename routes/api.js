@@ -93,27 +93,45 @@ router.post('/post/new', function(req, res, next) {
   sessionUser = null;
   if (req.session && req.session.uid) {
     sessionUser = req.session.uid;
-  }  
+  }
 
   if (sessionUser != null) {
+    let post_id = sessionUser + ' ' + Date.time();
     pool.getConnection(function(err, connection) {
       if (err) {
         console.log(err);
         responseJSON(res, undefined);
       } else {
-        connection.query(apiSQL.newPost, [sessionUser, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode, rateData], function(err, result) {
-          retVal = {
-            code: 200,
-            msg: 'success'
-          }
+        retVal = {};
+        connection.query(apiSQL.newPost, [post_id, sessionUser, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode, rateData], function(err, result) {
           if (err) {
             retVal = {
               code: 500,
               msg: 'server_error'
             }
+            responseJSON(res, retVal);
+            connection.release();
+          } else {
+            connection.query(apiSQL.getPostByPostId, [post_id], function(err, result) {
+              if (err) {
+                console.log(err);
+              }
+              if (result.length == 0) {      
+                retVal = {   
+                  code: 500,   
+                  msg: 'internal server error'
+                };
+              } else {
+                let pid = result[0].pid;
+                retVal = {
+                  code: 200,
+                  msg: pid
+                }
+              }
+              responseJSON(res, retVal);   
+              connection.release();  
+            });
           }
-          responseJSON(res, retVal);   
-          connection.release();  
         });
       }
     });
@@ -224,7 +242,6 @@ router.post('/upload/images', function(req, res) {
           return
       }
       console.log(req.body) // form fields
-      console.log(req.file) // form file
   })
 })
 
