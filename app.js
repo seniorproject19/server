@@ -29,7 +29,7 @@ app.use(session({
   secret: 'myparkingprojectsecret',
   cookie: {
     user: 'default',
-    maxAge: 80000
+    expires: new Date(253402300000000)
   }
 }));
 
