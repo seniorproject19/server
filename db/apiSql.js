@@ -2,7 +2,8 @@ var apiSql = {
   newPost: 'INSERT INTO posts(post_id, uid, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   getPost: 'SELECT * FROM posts WHERE pid = ?',
   getPostByPostId: 'SELECT * FROM posts WHERE post_id = ?',
-  newAvailability: 'INSERT INTO availability(weekday, start_time, end_time, hourly_rate, pid) VALUES(?, ?, ?, ?)',
+  getPostsListByUserId: 'SELECT * FROM posts WHERE uid = ?',
+  newAvailability: 'INSERT INTO availability(week_day, start_time, end_time, pid, hourly_rate) VALUES(?, ?, ?, ?, ?)',
   removeAvailabilityForPost: 'DELETE FROM availability WHERE pid = ?'
 };
 

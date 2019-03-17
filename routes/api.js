@@ -72,6 +72,56 @@ router.get('/user', function(req, res, next) {
   }
 });
 
+router.get('/post/get_list', function(req, res, next) {
+  sessionUser = null;
+  if (req.session && req.session.uid) {
+    sessionUser = req.session.uid;
+  }
+
+  if (sessionUser != null) {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        console.log(err);
+        responseJSON(res, undefined);
+      } else {
+        connection.query(apiSQL.getPostsListByUserId, [sessionUser], function(err, result) {
+          if (err) {
+            console.log(err);
+          }
+          retVal = {};
+          postList = [];
+          for (var i=0; i<result.length; i++) {
+            let resultEntry = result[i];
+            let pid = resultEntry.pid;
+            let title = resultEntry.title;
+            let address = resultEntry.address_1;
+            let longitude = resultEntry.longitude;
+            let latitude = resultEntry.latitude;
+            postList.push({
+              pid: pid,
+              title: title,
+              address: address,
+              longitude: longitude,
+              latitude: latitude
+            });
+          }
+          retVal = {
+            code: 200,
+            data: postList
+          };
+          responseJSON(res, retVal);   
+          connection.release();  
+        });
+      }
+    });
+  } else {
+    res.status(401).json({
+      code: 401,
+      msg: 'unauthorized'
+    })
+  }
+});
+
 router.post('/post/new', function(req, res, next) {
   let longitude = req.body.longitude;
   let latitude = req.body.latitude;
@@ -155,7 +205,8 @@ router.post('/post/availability', function(req, res, next) {
 
   let pid = req.body.pid;
   let availabilityData = req.body.availabilityData;
-  let availabilityJSON = JSON.parse(availabilityData);
+
+  console.log(availabilityData)
 
   pool.getConnection(function(err, connection) {
     if (err) {
@@ -203,28 +254,31 @@ router.post('/post/availability', function(req, res, next) {
           responseJSON(res, retVal);
           return;
         }
-      });
-
-      // add new availability
-      for (var key in availabilityJSON) {
-        if (availabilityJSON.hasOwnProperty(key)) {
-          for (var entry in availabilityJSON[key]) {
-            let startTime = entry[key]['start_time'];
-            let endTime = entry[key]['end_time'];
-            let hourlyRate = entry[key]['hourlyRate'];
-            connection.query(apiSQL.newAvailability, [key, startTime, endTime, hourlyRate, pid], function(err, result) {
-              if (err) {
-                retVal = {
-                  code: 500,
-                  msg: 'server_error'
-                }
-                responseJSON(res, retVal);
-                return;
+        // add new availability
+        for (var i=0; i<availabilityData.length; i++) {
+          let weekday = availabilityData[i].weekday
+          let startTime = availabilityData[i].start;
+          let endTime = availabilityData[i].end;
+          let hourlyRate = availabilityData[i].rate;
+          connection.query(apiSQL.newAvailability, [weekday, startTime, endTime, pid, hourlyRate], function(err, result) {
+            if (err) {
+              console.log(err);
+              retVal = {
+                code: 500,
+                msg: 'server_error'
               }
-            });
-          }
+              responseJSON(res, retVal);
+              return;
+            } else {
+              retVal = {
+                code: 200,
+                msg: 'success'
+              }
+              responseJSON(res, retVal);
+            }
+          });
         }
-      }
+      });
 
       connection.release();  
     });

@@ -16,8 +16,8 @@ CREATE TABLE posts(
    date_posted DATETIME,
    title VARCHAR(1024),
    description VARCHAR(8192),
-   longitude DECIMAL,
-   latitude DECIMAL,
+   longitude DECIMAL(5, 2),
+   latitude DECIMAL(5, 2),
    address_1 VARCHAR(1024),
    address_2 VARCHAR(512),
    city VARCHAR(20),
@@ -29,10 +29,10 @@ CREATE TABLE posts(
 
 CREATE TABLE availability(
    week_day CHAR(3),
-   start_time INT NOT NULL,
-   end_time INT NOT NULL,
+   start_time DECIMAL(3, 1) NOT NULL,
+   end_time DECIMAL(3, 1) NOT NULL,
    pid BIGINT NOT NULL,
-   hourly_rate INT NOT NULL,
+   hourly_rate DECIMAL(4, 2) NOT NULL,
    FOREIGN KEY (pid) REFERENCES posts(pid)
 );
 
