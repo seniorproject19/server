@@ -285,6 +285,66 @@ router.post('/post/availability', function(req, res, next) {
   });
 });
 
+router.get('/post/get/:pid', function(req, res) {
+  let pid = req.params.pid;
+  pool.getConnection(function(err, connection) {
+    if (err) {
+      console.log(err);
+      responseJSON(res, undefined);
+      return;
+    }
+    connection.query(apiSQL.getPost, [pid], function(err, result) {
+      if (err) {
+        retVal = {
+          code: 500,
+          msg: 'server_error'
+        }
+        responseJSON(res, retVal);
+        return;
+      }
+
+      if (result.length <= 0) {
+        retVal = {
+          code: 404,
+          msg: 'illegal post id'
+        }
+        responseJSON(res, retVal);
+        return;
+      }
+
+      retVal = {
+        code: 200,
+        date_posted: result[0].date_posted,
+        title: result[0].title,
+        description: result[0].description,
+        longitude: result[0].longitude,
+        latitude: result[0].latitude,
+        address: result[0].address_1
+      }
+
+      responseJSON(res, retVal);
+      connection.release();  
+    });
+  });
+});
+
+router.get('/post/image/list/:pid', function(req, res) {
+  let pid = req.params.pid;
+  let path = 'public/uploads/images/' + pid;
+  fileList = []
+  fs.readdir(path, function(err, items) {
+    for (var i=0; i<items.length; i++) {
+      var file = '/uploads/images/' + pid + '/' + items[i];
+      fileList.push(file);
+    }
+    retVal = {
+      code: 200,
+      file_paths: fileList
+    };
+    responseJSON(res, retVal);
+  });
+});
+
 // TODO: check post uid with authenticated user
 router.post('/upload/images/:pid', function(req, res) {
   sessionUser = null;
@@ -300,10 +360,7 @@ router.post('/upload/images/:pid', function(req, res) {
     return;
   }
 
-  console.log(req.file)
-
   let pid = req.params.pid;
-  console.log(pid);
 
   pool.getConnection(function(err, connection) {
     connection.query(apiSQL.getPost, [pid], function(err, result) {
