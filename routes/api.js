@@ -122,54 +122,48 @@ router.get('/post/get_list', function(req, res, next) {
   }
 });
 
-router.get('/post/get_list/region', function(req, res, next) {
-  sessionUser = null;
-  if (req.session && req.session.uid) {
-    sessionUser = req.session.uid;
-  }
+router.post('/post/get_list/region', function(req, res, next) {
 
-  if (sessionUser != null) {
-    pool.getConnection(function(err, connection) {
-      if (err) {
-        console.log(err);
-        responseJSON(res, undefined);
-      } else {
-        connection.query(apiSQL.getPostsListByRegion, [], function(err, result) {
-          if (err) {
-            console.log(err);
-          }
-          retVal = {};
-          postList = [];
-          for (var i=0; i<result.length; i++) {
-            let resultEntry = result[i];
-            let pid = resultEntry.pid;
-            let title = resultEntry.title;
-            let address = resultEntry.address_1;
-            let longitude = resultEntry.longitude;
-            let latitude = resultEntry.latitude;
-            postList.push({
-              pid: pid,
-              title: title,
-              address: address,
-              longitude: longitude,
-              latitude: latitude
-            });
-          }
-          retVal = {
-            code: 200,
-            data: postList
-          };
-          responseJSON(res, retVal);   
-          connection.release();  
-        });
-      }
-    });
-  } else {
-    res.status(401).json({
-      code: 401,
-      msg: 'unauthorized'
-    })
-  }
+  let longitudeMin = Math.min(req.body.top_left_long, req.body.bottom_right_long);
+  let longitudeMax = Math.max(req.body.top_left_long, req.body.bottom_right_long);
+  let latitudeMin = Math.min(req.body.top_left_lat, req.body.bottom_right_lat);
+  let latitudeMax = Math.max(req.body.top_left_lat, req.body.bottom_right_lat);
+
+  pool.getConnection(function(err, connection) {
+    if (err) {
+      console.log(err);
+      responseJSON(res, undefined);
+    } else {
+      connection.query(apiSQL.getPostsListByRegion, [latitudeMin, latitudeMax, longitudeMin, longitudeMax], function(err, result) {
+        if (err) {
+          console.log(err);
+        }
+        retVal = {};
+        postList = [];
+        for (var i=0; i<result.length; i++) {
+          let resultEntry = result[i];
+          let pid = resultEntry.pid;
+          let title = resultEntry.title;
+          let address = resultEntry.address_1;
+          let longitude = resultEntry.longitude;
+          let latitude = resultEntry.latitude;
+          postList.push({
+            pid: pid,
+            title: title,
+            address: address,
+            longitude: longitude,
+            latitude: latitude
+          });
+        }
+        retVal = {
+          code: 200,
+          data: postList
+        };
+        responseJSON(res, retVal);   
+        connection.release();  
+      });
+    }
+  });
 });
 
 router.post('/post/new', function(req, res, next) {
