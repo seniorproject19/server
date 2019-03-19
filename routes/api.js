@@ -365,14 +365,41 @@ router.get('/post/get/:pid', function(req, res) {
       retVal = {
         code: 200,
         date_posted: result[0].date_posted,
+        uid: result[0].uid,
         title: result[0].title,
         description: result[0].description,
         longitude: result[0].longitude,
         latitude: result[0].latitude,
         address: result[0].address_1
-      }
+      };
 
-      responseJSON(res, retVal);
+      connection.query(apiSQL.getPostAvailabilityByPostId, [pid], function(err, result) {
+
+        let availabilityResults = [];
+        
+        if (err) {
+          retVal = {
+            code: 500,
+            msg: 'server_error'
+          };
+          responseJSON(res, retVal);
+          return;
+        }
+        for (var i=0; i<result.length; i++) {
+          let resultEntry = result[i];
+          availabilityResults.push({
+            weekday: resultEntry.week_day,
+            start_time: resultEntry.start_time,
+            end_time: resultEntry.end_time,
+            hourly_rate: resultEntry.hourly_rate
+          });
+        }
+
+        retVal["availability"] = availabilityResults;
+        
+        responseJSON(res, retVal);
+      });
+
       connection.release();  
     });
   });
