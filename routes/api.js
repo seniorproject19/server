@@ -124,42 +124,115 @@ router.get('/post/get_list', function(req, res, next) {
 
 router.post('/post/get_list/region', function(req, res, next) {
 
-  let longitudeMin = Math.min(req.body.top_left_long, req.body.bottom_right_long);
+  /* let longitudeMin = Math.min(req.body.top_left_long, req.body.bottom_right_long);
   let longitudeMax = Math.max(req.body.top_left_long, req.body.bottom_right_long);
   let latitudeMin = Math.min(req.body.top_left_lat, req.body.bottom_right_lat);
-  let latitudeMax = Math.max(req.body.top_left_lat, req.body.bottom_right_lat);
+  let latitudeMax = Math.max(req.body.top_left_lat, req.body.bottom_right_lat); */
+
+  let date = req.body.date;
+  let start = req.body.start;
+  let end = req.body.end;
+  let weekday = req.body.weekday;
+
+  console.log(start);
+  console.log(end);
+  console.log(weekday);
 
   pool.getConnection(function(err, connection) {
     if (err) {
       console.log(err);
       responseJSON(res, undefined);
     } else {
-      connection.query(apiSQL.getPostsListByRegion, [latitudeMin, latitudeMax, longitudeMin, longitudeMax], function(err, result) {
+      // [latitudeMin, latitudeMax, longitudeMin, longitudeMax]
+      connection.query(apiSQL.getPostsListByRegion, [], function(err, result) {
         if (err) {
           console.log(err);
         }
         retVal = {};
         postList = [];
+        pidsList = [];
+
+        postDict = {};
+
         for (var i=0; i<result.length; i++) {
-          let resultEntry = result[i];
-          let pid = resultEntry.pid;
-          let title = resultEntry.title;
-          let address = resultEntry.address_1;
-          let longitude = resultEntry.longitude;
-          let latitude = resultEntry.latitude;
-          postList.push({
-            pid: pid,
-            title: title,
-            address: address,
-            longitude: longitude,
-            latitude: latitude
-          });
+          pidsList.push(result[i].pid);
+          postDict[result[i].pid] = result[i];
         }
-        retVal = {
-          code: 200,
-          data: postList
-        };
-        responseJSON(res, retVal);   
+
+        let sqlStatement = apiSQL.getPostAvailabilityByPostIds(pidsList);
+
+        connection.query(sqlStatement, function(err, availabilityResults) {
+          availabilityDict = {};
+          for (var i=0; i<availabilityResults.length; i++) {
+            let pid = availabilityResults[i].pid;
+            if (availabilityDict[pid] === undefined) {
+              availabilityDict[pid] = {};
+            }
+            if (availabilityDict[pid][availabilityResults[i].week_day] === undefined) {
+              availabilityDict[pid][availabilityResults[i].week_day] = [];
+            }
+            availabilityDict[pid][availabilityResults[i].week_day].push({
+              start: availabilityResults[i].start_time,
+              end: availabilityResults[i].end_time,
+              hourly_rate: availabilityResults[i].hourly_rate
+            });
+          }
+
+          let availablePid = [];
+          
+          for (var i=0; i<pidsList.length; i++) {
+            let pid = pidsList[i];
+            if (availabilityDict[pid][weekday] != undefined) {
+              let availabilityList = availabilityDict[pid][weekday];
+              var available = true;
+              var rate = 0;
+              for (var j=start; j<end; j+=0.5) {
+                var found = false;
+                for (var k=0; k<availabilityList.length; k++) {
+                  let availabilityEntry = availabilityList[k];
+                  if (availabilityEntry.start <= j && availabilityEntry.end > j) {
+                    found = true;
+                    rate += availabilityEntry.hourly_rate / 2.0;
+                  }
+                }
+                if (found === false) {
+                  available = false;
+                  break;
+                }
+              }
+              if (available === true) {
+                availablePid.push(pid);
+                postDict[pid].total_rate = rate;
+              }
+            }
+          }
+
+          for (var i=0; i<availablePid.length; i++) {
+            let resultEntry = postDict[availablePid[i]];
+            let pid = resultEntry.pid;
+            let title = resultEntry.title;
+            let address = resultEntry.address_1;
+            let longitude = resultEntry.longitude;
+            let latitude = resultEntry.latitude;
+            let totalRate = resultEntry.total_rate;
+            postList.push({
+              pid: pid,
+              title: title,
+              address: address,
+              longitude: longitude,
+              latitude: latitude,
+              total_rate: totalRate
+            });
+          }
+
+          retVal = {
+            code: 200,
+            data: postList
+          };
+          responseJSON(res, retVal);  
+
+        });
+
         connection.release();  
       });
     }
