@@ -6,6 +6,7 @@ CREATE TABLE users(
    registration_date DATE,
    birthday DATE,
    is_owner BOOLEAN,
+   plate VARCHAR(11),
    PRIMARY KEY (uid)
 );
 
@@ -36,25 +37,21 @@ CREATE TABLE availability(
    FOREIGN KEY (pid) REFERENCES posts(pid)
 );
 
-CREATE TABLE vehicles(
-   vid BIGINT NOT NULL,
-   state CHAR(2),
-   plate_number VARCHAR(8),
-   PRIMARY KEY (vid)
-);
-
 CREATE TABLE records(
    rid BIGINT NOT NULL AUTO_INCREMENT,
    uid BIGINT NOT NULL,
    owner_uid BIGINT NOT NULL,
    pid BIGINT NOT NULL,
    start_date DATE,
-   start_time INT NOT NULL,
-   end_time INT NOT NULL,
+   start_time DECIMAL(3, 1) NOT NULL,
+   end_time DECIMAL(3, 1) NOT NULL,
    total_charges DECIMAL(6, 2),
+   address VARCHAR(1024),
    plate VARCHAR(11),
    title VARCHAR(1024),
    description VARCHAR(8192),
+   longitude DECIMAL(9, 6),
+   latitude DECIMAL(9, 6),
    PRIMARY KEY (rid),
    FOREIGN KEY (uid) REFERENCES users(uid),
    FOREIGN KEY (owner_uid) REFERENCES users(uid),

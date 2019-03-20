@@ -237,6 +237,8 @@ router.post('/post/get_list/region', function(req, res, next) {
             code: 200,
             data: postList
           };
+
+          console.log(postList);
           responseJSON(res, retVal);  
 
         });
@@ -346,6 +348,9 @@ router.post('/record/new', function(req, res, next) {
             let ownerUid = result[0].uid;
             let title = result[0].title;
             let description = result[0].description;
+            let address = result[0].address_1;
+            let latitude = result[0].latitude;
+            let longitude = result[0].longitude;
             let date = new Date(startDate);
             let weekdaysConversion = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             let weekday = weekdaysConversion[date.getDay()];
@@ -383,7 +388,7 @@ router.post('/record/new', function(req, res, next) {
               }
               if (available === true) {
                 if (rate === totalCharges) {
-                  connection.query(apiSQL.newRecord, [sessionUser, ownerUid, pid, startDate, startTime, endTime, totalCharges, plate, title, description], function(err, result) {
+                  connection.query(apiSQL.newRecord, [sessionUser, ownerUid, pid, startDate, startTime, endTime, totalCharges, plate, title, address, description, latitude, longitude], function(err, result) {
                     if (err) {
                       console.log(err);
                     }
@@ -417,6 +422,100 @@ router.post('/record/new', function(req, res, next) {
       msg: 'unauthorized'
     })
   }
+});
+
+router.get('/record/user/list', function(req, res, next) {
+  sessionUser = null;
+  if (req.session && req.session.uid) {
+    sessionUser = req.session.uid;
+  }
+
+  if (sessionUser == null) {
+    res.json({
+      code: 401,
+      msg: 'unauthorized'
+    });
+    return;
+  }
+
+  pool.getConnection(function(err, connection) {
+    if (err) {
+      console.log(err);
+      responseJSON(res, undefined);
+    } else {
+      connection.query(apiSQL.getRecordByUid, [sessionUser], function(err, result) {
+        var recordsList = [];
+        for (var i=0; i<result.length; i++) {
+          recordsList.push({
+            pid: result[i].pid,
+            start_date: result[i].start_date,
+            start_time: result[i].start_time,
+            end_time: result[i].end_time,
+            total_charges: result[i].total_charges,
+            plate: result[i].plate,
+            title: result[i].title,
+            address: result[i].address,
+            latitude: result[i].latitude,
+            longitude: result[i].longitude,
+            description: result[i].description
+          });
+        }
+        retVal = {
+          code: 200,
+          data: recordsList
+        }
+        responseJSON(res, retVal);   
+        connection.release();  
+      });
+    }
+  });
+});
+
+router.get('/record/owner/list', function(req, res, next) {
+  sessionUser = null;
+  if (req.session && req.session.uid) {
+    sessionUser = req.session.uid;
+  }
+
+  if (sessionUser == null) {
+    res.json({
+      code: 401,
+      msg: 'unauthorized'
+    });
+    return;
+  }
+
+  pool.getConnection(function(err, connection) {
+    if (err) {
+      console.log(err);
+      responseJSON(res, undefined);
+    } else {
+      connection.query(apiSQL.getRecordByOwnerId, [sessionUser], function(err, result) {
+        var recordsList = [];
+        for (var i=0; i<result.length; i++) {
+          recordsList.push({
+            pid: result[i].pid,
+            start_date: result[i].start_date,
+            start_time: result[i].start_time,
+            end_time: result[i].end_time,
+            total_charges: result[i].total_charges,
+            plate: result[i].plate,
+            title: result[i].title,
+            address: result[i].address,
+            latitude: result[i].latitude,
+            longitude: result[i].longitude,
+            description: result[i].description
+          });
+        }
+        retVal = {
+          code: 200,
+          data: recordsList
+        }
+        responseJSON(res, retVal);   
+        connection.release();  
+      });
+    }
+  });
 });
 
 router.post('/post/availability', function(req, res, next) {

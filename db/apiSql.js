@@ -20,7 +20,9 @@ var apiSql = {
   },
   newAvailability: 'INSERT INTO availability(week_day, start_time, end_time, pid, hourly_rate) VALUES(?, ?, ?, ?, ?)',
   removeAvailabilityForPost: 'DELETE FROM availability WHERE pid = ?',
-  newRecord: 'INSERT INTO records(uid, owner_uid, pid, start_date, start_time, end_time, total_charges, plate, title, description) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  newRecord: 'INSERT INTO records(uid, owner_uid, pid, start_date, start_time, end_time, total_charges, plate, title, address, description, latitude, longitude) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  getRecordByUid: 'SELECT * FROM records WHERE uid = ?',
+  getRecordByOwnerId: 'SELECT * FROM records WHERE owner_uid = ?'
 };
 
 module.exports = apiSql;
