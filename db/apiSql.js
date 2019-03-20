@@ -6,6 +6,7 @@ var apiSql = {
   getPostsListByRegion: 'SELECT * FROM posts',
   // getPostsListByRegion: 'SELECT * FROM posts WHERE(latitude BETWEEN ? AND ?) AND (longitude BETWEEN ? AND ?)',
   getPostAvailabilityByPostId: 'SELECT * FROM availability WHERE pid = ?',
+  getPostAvailabilityByPostIdAndWeekday: 'SELECT * FROM availability WHERE pid = ? AND week_day = ?',
   getPostAvailabilityByPostIds: function(pidsList) {
     var queryConditionString = '';
     for (var i=0; i<pidsList.length; i++) {
@@ -18,7 +19,8 @@ var apiSql = {
     return 'SELECT * FROM availability WHERE ' + queryConditionString
   },
   newAvailability: 'INSERT INTO availability(week_day, start_time, end_time, pid, hourly_rate) VALUES(?, ?, ?, ?, ?)',
-  removeAvailabilityForPost: 'DELETE FROM availability WHERE pid = ?'
+  removeAvailabilityForPost: 'DELETE FROM availability WHERE pid = ?',
+  newRecord: 'INSERT INTO records(uid, owner_uid, pid, start_date, start_time, end_time, total_charges, plate, title, description) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 };
 
 module.exports = apiSql;

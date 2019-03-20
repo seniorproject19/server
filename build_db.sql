@@ -46,11 +46,17 @@ CREATE TABLE vehicles(
 CREATE TABLE records(
    rid BIGINT NOT NULL AUTO_INCREMENT,
    uid BIGINT NOT NULL,
-   vid BIGINT NOT NULL,
+   owner_uid BIGINT NOT NULL,
    pid BIGINT NOT NULL,
+   start_date DATE,
    start_time INT NOT NULL,
    end_time INT NOT NULL,
+   total_charges DECIMAL(6, 2),
+   plate VARCHAR(11),
+   title VARCHAR(1024),
+   description VARCHAR(8192),
    PRIMARY KEY (rid),
    FOREIGN KEY (uid) REFERENCES users(uid),
-   FOREIGN KEY (vid) REFERENCES vehicles(vid)
+   FOREIGN KEY (owner_uid) REFERENCES users(uid),
+   FOREIGN KEY (pid) REFERENCES posts(pid)
 );

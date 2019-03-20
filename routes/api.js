@@ -163,6 +163,14 @@ router.post('/post/get_list/region', function(req, res, next) {
 
         connection.query(sqlStatement, function(err, availabilityResults) {
           availabilityDict = {};
+          if (availabilityResults === undefined) {
+            retVal = {
+              code: 200,
+              data: postList
+            };
+            responseJSON(res, retVal);  
+            return;
+          }
           for (var i=0; i<availabilityResults.length; i++) {
             let pid = availabilityResults[i].pid;
             if (availabilityDict[pid] === undefined) {
@@ -289,6 +297,111 @@ router.post('/post/new', function(req, res, next) {
                 retVal = {
                   code: 200,
                   msg: pid
+                }
+              }
+              responseJSON(res, retVal);   
+              connection.release();  
+            });
+          }
+        });
+      }
+    });
+  } else {
+    res.status(401).json({
+      code: 401,
+      msg: 'unauthorized'
+    })
+  }
+});
+
+router.post('/record/new', function(req, res, next) {
+  let pid = req.body.pid;
+  let startDate = req.body.start_date;
+  let startTime = req.body.start_time;
+  let endTime = req.body.end_time;
+  let totalCharges = req.body.total_charges;
+  let plate = req.body.plate;
+
+  sessionUser = null;
+  if (req.session && req.session.uid) {
+    sessionUser = req.session.uid;
+  }
+
+  if (sessionUser != null) {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        console.log(err);
+        responseJSON(res, undefined);
+      } else {
+        retVal = {};
+        connection.query(apiSQL.getPost, [pid], function(err, result) {
+          if (err) {
+            retVal = {
+              code: 500,
+              msg: 'server_error'
+            }
+            responseJSON(res, retVal);
+            connection.release();
+          } else {
+            let ownerUid = result[0].uid;
+            let title = result[0].title;
+            let description = result[0].description;
+            let date = new Date(startDate);
+            let weekdaysConversion = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            let weekday = weekdaysConversion[date.getDay()];
+            connection.query(apiSQL.getPostAvailabilityByPostId, [pid, weekday], function(err, availabilityList) {
+              if (err) {
+                console.log(err);
+              }
+              if (result.length == 0) {      
+                retVal = {   
+                  code: 500,   
+                  msg: 'internal server error'
+                };
+              } else {
+                let pid = result[0].pid;
+                retVal = {
+                  code: 200,
+                  msg: pid
+                }
+              }
+              var available = true;
+              var rate = 0;
+              for (var j=startTime; j<endTime; j+=0.5) {
+                var found = false;
+                for (var k=0; k<availabilityList.length; k++) {
+                  let availabilityEntry = availabilityList[k];
+                  if (availabilityEntry.start_time <= j && availabilityEntry.end_time > j) {
+                    found = true;
+                    rate += availabilityEntry.hourly_rate / 2.0;
+                  }
+                }
+                if (found === false) {
+                  available = false;
+                  break;
+                }
+              }
+              if (available === true) {
+                if (rate === totalCharges) {
+                  connection.query(apiSQL.newRecord, [sessionUser, ownerUid, pid, startDate, startTime, endTime, totalCharges, plate, title, description], function(err, result) {
+                    if (err) {
+                      console.log(err);
+                    }
+                    retVal = {
+                      code: 200,
+                      msg: 'success'
+                    };
+                  });
+                } else {
+                  retVal = {
+                    code: 409,
+                    msg: 'availability_altered'
+                  }
+                }
+              } else {
+                retVal = {
+                  code: 409,
+                  msg: 'availability_altered'
                 }
               }
               responseJSON(res, retVal);   
