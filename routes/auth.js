@@ -89,4 +89,12 @@ router.post('/register', function(req, res, next) {
   });
 });
 
+router.post('/logout', function(req, res, next) {
+  req.session.uid = null;
+  responseJSON(res, {
+    code: 200,
+    msg: 'logout'
+  });
+});
+
 module.exports = router;

@@ -50,12 +50,14 @@ router.get('/user', function(req, res, next) {
             let username = result[0].username;
             let uid = result[0].uid;
             let is_owner = result[0].is_owner;
+            let balance = result[0].balance;
             retVal = {
               code: 200,
               uid: uid,
               username: username,
               email: email,
-              is_owner: is_owner
+              is_owner: is_owner,
+              balance: balance
             }
             console.log(retVal);
           }
@@ -350,6 +352,94 @@ router.post('/post/new', function(req, res, next) {
   }
 });
 
+// Enhance Security Later!!!
+router.post('/post/update', function(req, res, next) {
+  let pid = req.body.pid;
+  let title = req.body.title;
+  let description = req.body.description;
+
+  sessionUser = null;
+  if (req.session && req.session.uid) {
+    sessionUser = req.session.uid;
+  }
+
+  if (sessionUser != null) {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        console.log(err);
+        responseJSON(res, undefined);
+      } else {
+        retVal = {};
+        connection.query(apiSQL.updatePostById, [title, description, pid], function(err, result) {
+          if (err) {
+            retVal = {
+              code: 500,
+              msg: 'server_error'
+            }
+            responseJSON(res, retVal);
+            connection.release();
+          } else {
+            retVal = {
+              code: 200,
+              msg: 'success'
+            };
+            responseJSON(res, retVal);   
+            connection.release();  
+          }
+        });
+      }
+    });
+  } else {
+    res.status(401).json({
+      code: 401,
+      msg: 'unauthorized'
+    })
+  }
+});
+
+// Enhance Security Later!!!
+router.post('/post/remove', function(req, res, next) {
+  let pid = req.body.pid;
+
+  sessionUser = null;
+  if (req.session && req.session.uid) {
+    sessionUser = req.session.uid;
+  }
+
+  if (sessionUser != null) {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        console.log(err);
+        responseJSON(res, undefined);
+      } else {
+        retVal = {};
+        connection.query(apiSQL.removePostById, [pid], function(err, result) {
+          if (err) {
+            retVal = {
+              code: 500,
+              msg: 'server_error'
+            }
+            responseJSON(res, retVal);
+            connection.release();
+          } else {
+            retVal = {
+              code: 200,
+              msg: 'success'
+            };
+            responseJSON(res, retVal);   
+            connection.release();  
+          }
+        });
+      }
+    });
+  } else {
+    res.status(401).json({
+      code: 401,
+      msg: 'unauthorized'
+    })
+  }
+});
+
 router.post('/record/new', function(req, res, next) {
   let pid = req.body.pid;
   let startDate = req.body.start_date;
@@ -357,6 +447,9 @@ router.post('/record/new', function(req, res, next) {
   let endTime = req.body.end_time;
   let totalCharges = req.body.total_charges;
   let plate = req.body.plate;
+
+  console.log("XXX " + startTime);
+  console.log("YYY " + endTime);
 
   sessionUser = null;
   if (req.session && req.session.uid) {
@@ -388,7 +481,8 @@ router.post('/record/new', function(req, res, next) {
             let date = new Date(startDate);
             let weekdaysConversion = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             let weekday = weekdaysConversion[date.getDay()];
-            connection.query(apiSQL.getPostAvailabilityByPostId, [pid, weekday], function(err, availabilityList) {
+            console.log("*** " + pid + " " + weekday);
+            connection.query(apiSQL.getPostAvailabilityByPostIdAndWeekday, [pid, weekday], function(err, availabilityList) {
               if (err) {
                 console.log(err);
               }
@@ -407,11 +501,14 @@ router.post('/record/new', function(req, res, next) {
               var available = true;
               var rate = 0;
               for (var j=startTime; j<endTime; j+=0.5) {
+                console.log("hour: " + j);
                 var found = false;
                 for (var k=0; k<availabilityList.length; k++) {
                   let availabilityEntry = availabilityList[k];
                   if (availabilityEntry.start_time <= j && availabilityEntry.end_time > j) {
                     found = true;
+                    console.log("hourly_rate: " + availabilityEntry.hourly_rate);
+                    console.log("rate: " + rate);
                     rate += availabilityEntry.hourly_rate / 2.0;
                   }
                 }
@@ -421,15 +518,24 @@ router.post('/record/new', function(req, res, next) {
                 }
               }
               if (available === true) {
+                console.log(rate);
+                console.log(totalCharges);
                 if (rate === totalCharges) {
                   connection.query(apiSQL.newRecord, [sessionUser, ownerUid, pid, startDate, startTime, endTime, totalCharges, plate, title, address, description, latitude, longitude], function(err, result) {
                     if (err) {
                       console.log(err);
                     }
-                    retVal = {
-                      code: 200,
-                      msg: 'success'
-                    };
+                    connection.query(apiSQL.updateBalance, [rate, ownerUid], function(err, result) {
+                      if (err) {
+                        console.log(err);
+                      }
+                      connection.query(apiSQL.updateBalance, [0 - rate, sessionUser], function(err, result) {
+                        retVal = {
+                          code: 200,
+                          msg: 'success'
+                        };
+                      });
+                    });
                   });
                 } else {
                   retVal = {
@@ -632,15 +738,14 @@ router.post('/post/availability', function(req, res, next) {
               }
               responseJSON(res, retVal);
               return;
-            } else {
-              retVal = {
-                code: 200,
-                msg: 'success'
-              }
-              responseJSON(res, retVal);
             }
           });
         }
+        retVal = {
+          code: 200,
+          msg: 'success'
+        }
+        responseJSON(res, retVal);
       });
 
       connection.release();  

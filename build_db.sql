@@ -7,6 +7,7 @@ CREATE TABLE users(
    birthday DATE,
    is_owner BOOLEAN,
    plate VARCHAR(11),
+   balance DECIMAL(10, 2),
    PRIMARY KEY (uid)
 );
 
@@ -24,6 +25,7 @@ CREATE TABLE posts(
    city VARCHAR(20),
    state CHAR(2),
    zipcode INT,
+   removed BOOLEAN,
    PRIMARY KEY (pid),
    FOREIGN KEY (uid) REFERENCES users(uid)
 );

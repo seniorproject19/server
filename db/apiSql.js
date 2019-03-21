@@ -1,9 +1,11 @@
 var apiSql = {
-  newPost: 'INSERT INTO posts(post_id, uid, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  newPost: 'INSERT INTO posts(post_id, uid, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode, removed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?. False)',
   getPost: 'SELECT * FROM posts WHERE pid = ?',
   getPostByPostId: 'SELECT * FROM posts WHERE post_id = ?',
-  getPostsListByUserId: 'SELECT * FROM posts WHERE uid = ?',
-  getPostsListByRegion: 'SELECT * FROM posts WHERE(latitude BETWEEN ? AND ?) AND (longitude BETWEEN ? AND ?)',
+  getPostsListByUserId: 'SELECT * FROM posts WHERE uid = ? AND removed = False',
+  getPostsListByRegion: 'SELECT * FROM posts WHERE(latitude BETWEEN ? AND ?) AND (longitude BETWEEN ? AND ?) AND removed = False',
+  updatePostById: 'UPDATE posts SET title = ?, description = ? WHERE pid = ?',
+  removePostById: 'UPDATE posts SET removed = True WHERE pid = ?',
   getPostAvailabilityByPostId: 'SELECT * FROM availability WHERE pid = ?',
   getPostAvailabilityByPostIdAndWeekday: 'SELECT * FROM availability WHERE pid = ? AND week_day = ?',
   getPostAvailabilityByPostIds: function(pidsList) {
@@ -22,6 +24,7 @@ var apiSql = {
   newRecord: 'INSERT INTO records(uid, owner_uid, pid, start_date, start_time, end_time, total_charges, plate, title, address, description, latitude, longitude) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   getRecordByUid: 'SELECT * FROM records WHERE uid = ?',
   getRecordByOwnerId: 'SELECT * FROM records WHERE owner_uid = ?',
+  updateBalance: 'UPDATE users SET balance = balance + ? WHERE uid = ?',
   getRecordsInConflict: function(start, end, date, pidsList) {
     var pidConditions = '(';
     for (var i=0; i<pidsList.length; i++) {
