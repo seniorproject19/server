@@ -186,6 +186,8 @@ router.post('/post/get_list/region', function(req, res, next) {
             });
           }
 
+          pidsList = Object.keys(availabilityDict);
+
           let availablePid = [];
           
           for (var i=0; i<pidsList.length; i++) {
