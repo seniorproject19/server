@@ -124,10 +124,10 @@ router.get('/post/get_list', function(req, res, next) {
 
 router.post('/post/get_list/region', function(req, res, next) {
 
-  /* let longitudeMin = Math.min(req.body.top_left_long, req.body.bottom_right_long);
+  let longitudeMin = Math.min(req.body.top_left_long, req.body.bottom_right_long);
   let longitudeMax = Math.max(req.body.top_left_long, req.body.bottom_right_long);
   let latitudeMin = Math.min(req.body.top_left_lat, req.body.bottom_right_lat);
-  let latitudeMax = Math.max(req.body.top_left_lat, req.body.bottom_right_lat); */
+  let latitudeMax = Math.max(req.body.top_left_lat, req.body.bottom_right_lat);
 
   let date = req.body.date;
   let start = req.body.start;
@@ -143,8 +143,7 @@ router.post('/post/get_list/region', function(req, res, next) {
       console.log(err);
       responseJSON(res, undefined);
     } else {
-      // [latitudeMin, latitudeMax, longitudeMin, longitudeMax]
-      connection.query(apiSQL.getPostsListByRegion, [], function(err, result) {
+      connection.query(apiSQL.getPostsListByRegion, [latitudeMin, latitudeMax, longitudeMin, longitudeMax], function(err, result) {
         if (err) {
           console.log(err);
         }
@@ -211,38 +210,71 @@ router.post('/post/get_list/region', function(req, res, next) {
                 }
               }
               if (available === true) {
-                availablePid.push(pid);
+                availablePid.push(parseInt(pid));
                 postDict[pid].total_rate = rate;
               }
             }
           }
 
-          for (var i=0; i<availablePid.length; i++) {
-            let resultEntry = postDict[availablePid[i]];
-            let pid = resultEntry.pid;
-            let title = resultEntry.title;
-            let address = resultEntry.address_1;
-            let longitude = resultEntry.longitude;
-            let latitude = resultEntry.latitude;
-            let totalRate = resultEntry.total_rate;
-            postList.push({
-              pid: pid,
-              title: title,
-              address: address,
-              longitude: longitude,
-              latitude: latitude,
-              total_rate: totalRate
+          if (availablePid == undefined || availablePid.length == 0) {
+            retVal = {
+              code: 200,
+              data: []
+            };
+            responseJSON(res, retVal);
+            return;
+          } else {
+            let recordSqlStatement = apiSQL.getRecordsInConflict(start, end, date, availablePid);
+            let recordPids = [];
+            connection.query(recordSqlStatement, function(err, recordResults) {
+              console.log(recordResults);
+              console.log(recordSqlStatement);
+              if (recordResults != undefined && recordResults.length != 0) {
+                for (var i=0; i<recordResults.length; i++) {
+                  if (recordPids.indexOf(recordResults[i].pid) == -1) {
+                    recordPids.push(recordResults[i].pid);
+                  }
+                }
+                filteredPids = [];
+                for (var i=0; i<availablePid.length; i++) {
+                  if (recordPids.indexOf(availablePid[i]) == -1) {
+                    filteredPids.push(availablePid[i]);
+                  }
+                }
+                console.log(availablePid);
+                console.log(recordPids);
+                console.log(filteredPids);
+                availablePid = filteredPids;
+              }
+              for (var i=0; i<availablePid.length; i++) {
+                let resultEntry = postDict[availablePid[i]];
+                let pid = resultEntry.pid;
+                let title = resultEntry.title;
+                let address = resultEntry.address_1;
+                let longitude = resultEntry.longitude;
+                let latitude = resultEntry.latitude;
+                let totalRate = resultEntry.total_rate;
+                postList.push({
+                  pid: pid,
+                  title: title,
+                  address: address,
+                  longitude: longitude,
+                  latitude: latitude,
+                  total_rate: totalRate
+                });
+              }
+
+              retVal = {
+                code: 200,
+                data: postList
+              };
+
+              console.log(postList);
+              responseJSON(res, retVal);  
+              return;
+
             });
           }
-
-          retVal = {
-            code: 200,
-            data: postList
-          };
-
-          console.log(postList);
-          responseJSON(res, retVal);  
-
         });
 
         connection.release();  
