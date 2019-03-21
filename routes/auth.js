@@ -67,12 +67,14 @@ router.post('/register', function(req, res, next) {
   let email = req.body.email;
   // let birthday = req.body.birthday;
   let isOwner = req.body.isOwner;
+  let vehicleInfo = req.body.vehicle_info;
+  console.log(vehicleInfo);
   pool.getConnection(function(err, connection) {
     if (err) {
       console.log(err);
       responseJSON(res, undefined);
     } else {
-      connection.query(authSQL.insert, [username, pwd, email, null, null, isOwner], function(err, result) {
+      connection.query(authSQL.insert, [username, pwd, email, null, null, isOwner, vehicleInfo], function(err, result) {
         if (err) {
           console.log(err);
         }

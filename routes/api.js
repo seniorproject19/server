@@ -51,12 +51,14 @@ router.get('/user', function(req, res, next) {
             let uid = result[0].uid;
             let is_owner = result[0].is_owner;
             let balance = result[0].balance;
+            let vehicleInfo = result[0].vehicle_info;
             retVal = {
               code: 200,
               uid: uid,
               username: username,
               email: email,
               is_owner: is_owner,
+              vehicle_info: vehicleInfo,
               balance: balance
             }
             console.log(retVal);

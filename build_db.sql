@@ -8,6 +8,7 @@ CREATE TABLE users(
    is_owner BOOLEAN,
    plate VARCHAR(11),
    balance DECIMAL(10, 2),
+   vehicle_info VARCHAR(256),
    PRIMARY KEY (uid)
 );
 
