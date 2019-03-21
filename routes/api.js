@@ -296,7 +296,6 @@ router.post('/post/new', function(req, res, next) {
   let zipcode = req.body.zipcode;
   let title = req.body.title;
   let description = req.body.description;
-  let rateData = '';
 
   sessionUser = null;
   if (req.session && req.session.uid) {
@@ -311,8 +310,9 @@ router.post('/post/new', function(req, res, next) {
         responseJSON(res, undefined);
       } else {
         retVal = {};
-        connection.query(apiSQL.newPost, [post_id, sessionUser, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode, rateData], function(err, result) {
+        connection.query(apiSQL.newPost, [post_id, sessionUser, date_posted, title, description, longitude, latitude, address_1, address_2, city, state, zipcode], function(err, result) {
           if (err) {
+            console.log(err);
             retVal = {
               code: 500,
               msg: 'server_error'
