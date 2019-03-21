@@ -691,14 +691,21 @@ router.get('/post/image/list/:pid', function(req, res) {
   let path = 'public/uploads/images/' + pid;
   fileList = []
   fs.readdir(path, function(err, items) {
-    for (var i=0; i<items.length; i++) {
-      var file = '/uploads/images/' + pid + '/' + items[i];
-      fileList.push(file);
+    if (items === undefined) {
+      retVal = {
+        code: 200,
+        file_paths: []
+      };
+    } else {
+      for (var i=0; i<items.length; i++) {
+        var file = '/uploads/images/' + pid + '/' + items[i];
+        fileList.push(file);
+      }
+      retVal = {
+        code: 200,
+        file_paths: fileList
+      };
     }
-    retVal = {
-      code: 200,
-      file_paths: fileList
-    };
     responseJSON(res, retVal);
   });
 });
